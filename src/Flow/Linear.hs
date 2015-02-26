@@ -4,7 +4,7 @@ module Flow.Linear where
 import Data.Serialize
 import GHC.Generics
 
-data Vec2 a = Vec2 a a deriving (Show, Generic)
+data Vec2 a = Vec2 a a deriving (Show, Generic, Eq, Ord)
 
 instance Serialize a => Serialize (Vec2 a)
 

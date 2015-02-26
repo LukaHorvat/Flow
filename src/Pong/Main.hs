@@ -9,18 +9,18 @@ import Data.Serialize
 import Data.Proxy
 import GHC.Generics
 import System.Environment
-import Control.Monad ((=<<))
+import System.Console.ANSI (clearScreen)
 
 data State = State
-           { playerPaddle :: Double
-           , aiPaddle :: Double
-           , ball :: Vec2 Double
-           , ballV :: Vec2 Double } deriving Show
+           { playerPaddle :: Int
+           , aiPaddle :: Int
+           , ball :: Vec2 Int
+           , ballV :: Vec2 Int } deriving Show
 
-data Update = BallPos (Vec2 Double)
-            | BallVel (Vec2 Double)
-            | PlayerPos Double
-            | AIPos Double
+data Update = BallPos (Vec2 Int)
+            | BallVel (Vec2 Int)
+            | PlayerPos Int
+            | AIPos Int
             deriving (Generic, Show)
 
 instance Serialize Update
@@ -39,27 +39,27 @@ update = do
     logMsg . show . ball =<< cgs
     return ()
 
-advance :: State -> Vec2 Double
+advance :: State -> Vec2 Int
 advance s = ball s + ballV s
 
-bounceWall :: State -> Vec2 Double
+bounceWall :: State -> Vec2 Int
 bounceWall s
-    | y < 0 || y > 100 = Vec2 vx (-vy)
+    | y < 0 || y > 10 = Vec2 vx (-vy)
     | otherwise        = Vec2 vx vy
     where Vec2 _ y = ball s
           Vec2 vx vy = ballV s
 
-bouncePaddle :: State -> Vec2 Double
+bouncePaddle :: State -> Vec2 Int
 bouncePaddle s
-    | x < 10 && abs (y - playerPaddle s) < 20 = bounced
-    | x > 90 && abs (y - aiPaddle s) < 20     = bounced
-    | otherwise                               = ballV s
+    | x < 1 && abs (y - playerPaddle s) < 2 = bounced
+    | x > 19 && abs (y - aiPaddle s) < 2    = bounced
+    | otherwise                             = ballV s
     where Vec2 x y = ball s
           Vec2 vx vy = ballV s
           bounced = Vec2 (-vx) vy
 
 initial :: State
-initial = State 50 50 (Vec2 50 50) (Vec2 10 10)
+initial = State 5 5 (Vec2 10 5) (Vec2 1 1)
 
 config :: GameConfiguration State Update
 config = GameConfiguration
@@ -69,7 +69,13 @@ config = GameConfiguration
        , newConnectionHandler = NewConnectionHandler $ const $ const [] }
 
 draw :: State -> IO ()
-draw _ = return ()
+draw st = do
+    --clearScreen
+    forM_ [0..19] $ \y -> putStrLn $ map (\x -> drawPx x y) [0..19]
+    where drawPx x y = if full x y then '#' else ' '
+          full x y = ball st == Vec2 x y
+                  || x == 0 && abs (y - playerPaddle st) < 2
+                  || y == 19 && abs (y - aiPaddle st) < 2
 
 startServer, startClient :: IO ()
 startServer = serveGame config
