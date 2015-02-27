@@ -9,23 +9,29 @@ import Data.Serialize
 import Data.Proxy
 import GHC.Generics
 import System.Environment
-import System.Console.ANSI (clearScreen)
 import System.Process (system)
 
+type NumType = Int
+type Vec = Vec2 NumType
+width, height :: Int
+width = 40
+height = 20
 
 data State = State
-           { playerPaddle :: Int
-           , aiPaddle :: Int
-           , ball :: Vec2 Int
-           , ballV :: Vec2 Int } deriving Show
+           { playerPaddle :: NumType
+           , aiPaddle :: NumType
+           , ball :: Vec
+           , ballV :: Vec } deriving Show
 
-data Update = BallPos (Vec2 Int)
-            | BallVel (Vec2 Int)
-            | PlayerPos Int
-            | AIPos Int
+data Update = BallPos (Vec)
+            | BallVel (Vec)
+            | PlayerPos NumType
+            | AIPos NumType
             deriving (Generic, Show)
 
+data Command = Up | Down deriving (Generic, Show)
 instance Serialize Update
+instance Serialize Command
 
 instance Diff State Update where
     commit s (BallPos p) = s { ball = p }
@@ -40,20 +46,20 @@ update = do
     withCgs_ $ BallVel . bouncePaddle
     return ()
 
-advance :: State -> Vec2 Int
+advance :: State -> Vec
 advance s = ball s + ballV s
 
-bounceWall :: State -> Vec2 Int
+bounceWall :: State -> Vec
 bounceWall s
-    | y <= 0 || y >= 9 = Vec2 vx (-vy)
+    | y <= 0 || y >= height - 1 = Vec2 vx (-vy)
     | otherwise        = Vec2 vx vy
     where Vec2 _ y = ball s
           Vec2 vx vy = ballV s
 
-bouncePaddle :: State -> Vec2 Int
+bouncePaddle :: State -> Vec
 bouncePaddle s
     | x <= 1 && abs (y - playerPaddle s) < 2 = bounced
-    | x >= 18 && abs (y - aiPaddle s) < 2    = bounced
+    | x >= width - 2 && abs (y - aiPaddle s) < 2    = bounced
     | otherwise                             = ballV s
     where Vec2 x y = ball s
           Vec2 vx vy = ballV s
@@ -72,11 +78,12 @@ config = GameConfiguration
 draw :: State -> IO ()
 draw st = do
     system "cls"
-    putStrLn $ unlines $ map (\y -> map (\x -> drawPx x y) [0..19]) [0..9]
-    where drawPx x y = if full x y then '#' else ' '
+    putStrLn $ unlines $ map (\y -> map (\x -> drawPx x y) [0..width - 1]) [0..height - 1]
+    where drawPx x y | full x y  = '#'
+                     | otherwise = ' '
           full x y = ball st == Vec2 x y
                   || x == 0 && abs (y - playerPaddle st) < 2
-                  || x == 19 && abs (y - aiPaddle st) < 2
+                  || x == width - 1 && abs (y - aiPaddle st) < 2
 
 startServer, startClient :: IO ()
 startServer = serveGame config

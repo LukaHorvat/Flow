@@ -18,11 +18,12 @@ data NewConnectionHandler s u = NewConnectionHandler (ClientID -> s -> [u])
 
 
 -- | Game configuration.
-data GameConfiguration s u = GameConfiguration
-                           { networkStrategy :: NetworkStrategy s u
-                           , initialState :: s
-                           , gameLogic :: Game s u ()
-                           , newConnectionHandler :: NewConnectionHandler s u }
+data GameConfiguration s u e = GameConfiguration
+                             { networkStrategy :: NetworkStrategy s u
+                             , initialState :: s
+                             , gameLogic :: Game s u ()
+                             , newConnectionHandler :: NewConnectionHandler s u
+                             , eventHandler :: ClientID -> e -> Game s u () }
 
 -- | Sends all updates to every client
 fullSharingStrategy :: Diff s u => NetworkStrategy s u
