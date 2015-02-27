@@ -10,6 +10,8 @@ import Data.Proxy
 import GHC.Generics
 import System.Environment
 import System.Console.ANSI (clearScreen)
+import System.Process (system)
+
 
 data State = State
            { playerPaddle :: Int
@@ -36,7 +38,6 @@ update = do
     withCgs_ $ BallPos . advance
     withCgs_ $ BallVel . bounceWall
     withCgs_ $ BallVel . bouncePaddle
-    logMsg . show . ball =<< cgs
     return ()
 
 advance :: State -> Vec2 Int
@@ -44,15 +45,15 @@ advance s = ball s + ballV s
 
 bounceWall :: State -> Vec2 Int
 bounceWall s
-    | y < 0 || y > 10 = Vec2 vx (-vy)
+    | y <= 0 || y >= 9 = Vec2 vx (-vy)
     | otherwise        = Vec2 vx vy
     where Vec2 _ y = ball s
           Vec2 vx vy = ballV s
 
 bouncePaddle :: State -> Vec2 Int
 bouncePaddle s
-    | x < 1 && abs (y - playerPaddle s) < 2 = bounced
-    | x > 19 && abs (y - aiPaddle s) < 2    = bounced
+    | x <= 1 && abs (y - playerPaddle s) < 2 = bounced
+    | x >= 18 && abs (y - aiPaddle s) < 2    = bounced
     | otherwise                             = ballV s
     where Vec2 x y = ball s
           Vec2 vx vy = ballV s
@@ -70,12 +71,12 @@ config = GameConfiguration
 
 draw :: State -> IO ()
 draw st = do
-    --clearScreen
-    forM_ [0..19] $ \y -> putStrLn $ map (\x -> drawPx x y) [0..19]
+    system "cls"
+    putStrLn $ unlines $ map (\y -> map (\x -> drawPx x y) [0..19]) [0..9]
     where drawPx x y = if full x y then '#' else ' '
           full x y = ball st == Vec2 x y
                   || x == 0 && abs (y - playerPaddle st) < 2
-                  || y == 19 && abs (y - aiPaddle st) < 2
+                  || x == 19 && abs (y - aiPaddle st) < 2
 
 startServer, startClient :: IO ()
 startServer = serveGame config

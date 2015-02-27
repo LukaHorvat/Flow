@@ -70,7 +70,7 @@ executable Flow
                        network == 2.4.*,
                        lens-family == 1.2.*,
                        lens-family-th == 0.4.*,
-                       ansi-terminal == 0.6.*
+                       process == 1.2.*
 
   -- Directories containing source files.
   hs-source-dirs:      src
