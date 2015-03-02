@@ -1,7 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleInstances, MultiParamTypeClasses #-}
 module Flow.Game where
 
-import Data.Serialize.Put
 import Control.Monad.State.Class
 import Control.Monad.Writer.Class
 import Control.Monad.State
@@ -17,17 +16,20 @@ data NetworkStrategy s u = NetworkStrategy (s -> u -> ClientID -> Bool)
 data NewConnectionHandler s u = NewConnectionHandler (ClientID -> s -> [u])
 
 
--- | Game configuration.
-data GameConfiguration s u e = GameConfiguration
-                             { networkStrategy :: NetworkStrategy s u
-                             , initialState :: s
-                             , gameLogic :: Game s u ()
-                             , newConnectionHandler :: NewConnectionHandler s u
-                             , eventHandler :: ClientID -> e -> Game s u () }
+-- | Game logic configuration.
+data LogicConfiguration s u e = LogicConfiguration
+                              { networkStrategy :: NetworkStrategy s u
+                              , initialState :: s
+                              , gameLogic :: Game s u ()
+                              , newConnectionHandler :: NewConnectionHandler s u
+                              , eventHandler :: ClientID -> e -> Game s u () }
 
 -- | Sends all updates to every client
 fullSharingStrategy :: Diff s u => NetworkStrategy s u
 fullSharingStrategy = NetworkStrategy $ \_ _ _ -> True
+
+-- | Client configuration.
+data ClientConfiguration s
 
 -- | Summary of what happened in one logic step
 data Report u = Report [u] [String]

@@ -19,13 +19,13 @@ data InternalState s = InternalState
                      , lastClientID :: ClientID }
 
 fps, ft :: Integer
-fps = 1
+fps = 5
 ft = 1000000 `div` fps
 
-newtype Net s u e a = Net (ReaderT (GameConfiguration s u e, IORef (InternalState s)) IO a)
+newtype Net s u e a = Net (ReaderT (LogicConfiguration s u e, IORef (InternalState s)) IO a)
                       deriving
                     ( Monad
-                    , MonadReader (GameConfiguration s u e, IORef (InternalState s))
+                    , MonadReader (LogicConfiguration s u e, IORef (InternalState s))
                     , MonadIO, Functor, Applicative )
 
 instance Forkable (Net s u e) where
@@ -33,10 +33,10 @@ instance Forkable (Net s u e) where
         (gc, stRef) <- ask
         liftIO $ forkIO $ runNet gc stRef n
 
-runNet :: GameConfiguration s u e -> IORef (InternalState s) -> Net s u e a -> IO a
+runNet :: LogicConfiguration s u e -> IORef (InternalState s) -> Net s u e a -> IO a
 runNet gc stRef (Net r) = runReaderT r (gc, stRef)
 
-serveGame :: (Diff s u, Serialize e, Serialize u) => GameConfiguration s u e -> IO ()
+serveGame :: (Diff s u, Serialize e, Serialize u) => LogicConfiguration s u e -> IO ()
 serveGame gc = withSocketsDo $ do
     stRef <- newIORef $ InternalState (initialState gc) [] 0
     runNet gc stRef logicLoop
@@ -78,7 +78,7 @@ processEvents cID sock = do
     (gc, _) <- ask
     let handler = eventHandler gc
     forever $ do
-        liftIO $ threadDelay $ fromIntegral ft
+        threadDelay $ fromIntegral ft
         bs <- recv sock 4096
         unless (ByteString.null bs) $ case runGet (getAll get :: Get [e]) bs of
             Left err -> putStrLn err

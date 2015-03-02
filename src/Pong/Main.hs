@@ -41,7 +41,7 @@ instance Diff State Update where
 
 update :: Game State Update ()
 update = do
-    withCgs_ $ BallPos . advance
+    withCgs_ $ BallPos . Main.advance
     withCgs_ $ BallVel . bounceWall
     withCgs_ $ BallVel . bouncePaddle
     return ()
@@ -68,8 +68,8 @@ bouncePaddle s
 initial :: State
 initial = State 5 5 (Vec2 10 5) (Vec2 1 1)
 
-config :: GameConfiguration State Update
-config = GameConfiguration
+config :: LogicConfiguration State Update Command
+config = LogicConfiguration
        { networkStrategy      = fullSharingStrategy
        , initialState         = initial
        , gameLogic            = update
